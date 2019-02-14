@@ -1,0 +1,40 @@
+#!/bin/bash
+set -x
+echo -e "\n\e[33m **********************************************************************\n"
+echo -e "\e[33m ========================= AWS Project =========================\033[0m"
+echo -e "\e[33m ========== Installing and Configuring T2micro in EC2 ==========\033[0m"
+echo -e "\n\e[33m **********************************************************************\n"
+#
+#Modify for your preferences
+#
+############################################################################################
+echo -e "\n\e[33m --------------- Creating a key pair ---------------\033[0m\n"
+# Change $keyname to your preferred one
+aws ec2 create-key-pair --key-name mykeyname --query 'KeyMaterial' --output text > ~/.ssh/mykeyname.pem
+#
+chmod 400 ~/.ssh/mykeyname.pem
+ssh-add ~/.ssh/mykeyname.pem
+# Don't forget to have your security group be already configured for open ssh port
+############################################################################################
+# The instances: ami-08182c55a1c188dee (Ubuntu 18); ami-075b44448d2276521 (Ubuntu 16.04) 
+echo -e "\n\e[33m --------------- Create an Amazon EC2 instance ---------------\033[0m\n"
+aws ec2 run-instances --image-id ami-075b44448d2276521 \
+--key-name mykeyname --instance-type t2.micro \
+--count 1 --security-group-ids mysg-id \
+--user-data file://script.sh
+#
+# If you need to create tag to your inctance and it will be the only one running one in your EC2, then uncomment commands below for your preferences
+#instanceID=$(aws ec2 describe-instances \
+#--filters "Name=key-name,Values=mykeyname" \
+#--query "Reservations[*].Instances[*].InstanceId" \
+#--output=text)
+#instanceIp=$(aws ec2 describe-instances \
+#--query "Reservations[*].Instances[*].PublicIpAddress" \
+#--output=text)
+#echo -e "\n\e[4;32m --------------- Your Instance IP is $instanceIp ---------------\033[0m\n"
+############################################################################################
+# If your instance will be the only one launched and you want to create a tag, uncomment lines below
+#echo -e "\n\e[33m --------------- Adding a new tag to your Instance ---------------\033[0m\n"
+#aws ec2 create-tags --resources ami-075b44448d2276521 $instanceID --tags Key=Name,Value=mytagdescription
+############################################################################################
+set +x
