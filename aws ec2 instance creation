@@ -9,7 +9,7 @@ echo -e "\n\e[33m **************************************************************
 #
 ############################################################################################
 echo -e "\n\e[33m --------------- Creating a key pair ---------------\033[0m\n"
-# Change $keyname to your preferred one
+# Change $mykeyname to your preferred one
 aws ec2 create-key-pair --key-name mykeyname --query 'KeyMaterial' --output text > ~/.ssh/mykeyname.pem
 #
 chmod 400 ~/.ssh/mykeyname.pem
