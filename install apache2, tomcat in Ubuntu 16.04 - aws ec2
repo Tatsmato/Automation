@@ -1,0 +1,106 @@
+#!/bin/bash
+###################################################################################
+#########################       INSTALLING APACHE        ##########################
+###################################################################################
+set -x
+echo -e "\n\e[100m ---- UPDATING UBUNTU 16.04 ----\033[0m\n"
+sudo apt-get update
+# Installing Apache2
+sudo apt-get install apache2 default-jdk -y
+sudo systemctl enable apache2
+sudo systemctl start apache2
+# INSTALLING TOMCAT
+sudo mkdir -p /opt/tomcat
+sudo useradd -m -U -d /opt/tomcat -s /bin/false tomcat
+cd /opt/tomcat/
+sudo wget http://apache.cp.if.ua/tomcat/tomcat-8/v8.5.37/bin/apache-tomcat-8.5.37.tar.gz
+sudo tar xvf apache-tomcat-8*.tar.gz --strip-components 1
+# Configuring Tomcat
+sudo chown -R tomcat: /opt/tomcat
+sudo chmod +x /opt/tomcat/bin/*.sh
+sudo touch /etc/systemd/system/tomcat.service
+sudo sh -c " cat <<EOF > /etc/systemd/system/tomcat.service
+[Unit]
+Description=Tomcat 8.5 servlet container
+After=network.target
+
+[Service]
+Type=forking
+
+User=tomcat
+Group=tomcat
+Environment="\"'JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/jre"'"
+Environment="\"'JAVA_OPTS=-Djava.security.egd=file:///dev/urandom"'"
+Environment="\"'CATALINA_BASE=/opt/tomcat"'"
+Environment="\"'CATALINA_HOME=/opt/tomcat"'"
+Environment="\"'CATALINA_PID=/opt/tomcat/temp/tomcat.pid"'"
+Environment="\"'CATALINA_OPTS=-Xms512M -Xmx1024M -server -XX:+UseParallelGC"'"
+
+ExecStart=/opt/tomcat/bin/startup.sh
+ExecStop=/opt/tomcat/bin/shutdown.sh
+
+[Install]
+WantedBy=multi-user.target
+EOF"
+sudo systemctl daemon-reload
+sudo systemctl enable tomcat.service
+#echo -e "\n\e[4;34m ---- Backing up and changing tomcat-users.xml and ocntext.xml ----\033[0m\n"
+sudo cp /opt/tomcat/conf/tomcat-users.xml /opt/tomcat/conf/tomcat-users.xml.back
+sudo sh -c " cat <<EOF > /opt/tomcat/conf/tomcat-users.xml
+<?xml version="\"'1.0" encoding="UTF-8"'"?>
+<tomcat-users xmlns="\"'http://tomcat.apache.org/xml"'"
+              xmlns:xsi="\"'http://www.w3.org/2001/XMLSchema-instance"'"
+              xsi:schemaLocation="\"'http://tomcat.apache.org/xml tomcat-users.xsd"'"
+              version="\"'1.0"'">
+   <user username="\"'admin" password="password" roles="manager-gui,admin-gui"'"/>
+</tomcat-users>
+EOF"
+sudo cp /opt/tomcat/webapps/manager/META-INF/context.xml /opt/tomcat/webapps/manager/META-INF/context.xml.back
+sudo sh -c " cat <<EOF > /opt/tomcat/webapps/manager/META-INF/context.xml
+<?xml version="\"'1.0" encoding="UTF-8"'"?>
+<Context antiResourceLocking="\"'false" privileged="true"'" >
+  <Manager sessionAttributeValueClassNameFilter="\"'java\.lang\.(?:Boolean|Integer|Long|Number|String)|org\.apache\.catalina\.filters\.CsrfPreventionFilter\$LruCache(?:\$1)?|java\.util\.(?:Linked)?HashMap"'"/>
+</Context>
+EOF"
+sudo cp /opt/tomcat/webapps/host-manager/META-INF/context.xml /opt/tomcat/webapps/host-manager/META-INF/context.xml.back
+sudo sh -c " cat <<EOF > /opt/tomcat/webapps/host-manager/META-INF/context.xml
+<?xml version="\"'1.0" encoding="UTF-8"'"?>
+<Context antiResourceLocking="\"'false" privileged="true"'" >
+ <Manager sessionAttributeValueClassNameFilter="\"'java\.lang\.(?:Boolean|Integer|Long|Number|String)|org\.apache\.catalina\.filters\.CsrfPreventionFilter\$LruCache(?:\$1)?|java\.util\.(?:Linked)?HashMap"'"/>
+</Context>
+EOF"
+sudo systemctl daemon-reload
+# CONFIGURING OF TOMCAT IS FINISHED
+sudo systemctl restart tomcat.service
+# ========== CONFIGURING APACHE AS PROXY ========== 
+instanceIP=$(curl http://169.254.169.254/latest/meta-data/public-ipv4)
+instanceID=$(curl http://169.254.169.254/latest/meta-data/instance-id)
+#
+sudo cp /etc/apache2/sites-available/000-default.conf /etc/apache2/sites-available/000-default.conf.back
+sudo sh -c " cat <<EOF > /etc/apache2/sites-available/000-default.conf
+<VirtualHost *:80>
+        ServerName $instanceIP
+        #ServerAdmin root@localhost
+
+        ProxyPreserveHost On
+        ProxyRequests Off
+        ProxyPass / http://127.0.0.1:8080/
+        ProxyPassReverse / http://127.0.0.1:8080/
+</VirtualHost>
+EOF"
+sudo a2enmod proxy
+sudo a2enmod proxy_http
+sudo a2enmod proxy_balancer
+sudo a2enmod lbmethod_byrequests
+sudo apache2ctl configtest
+# Configuring of Apache as proxy is finished
+sudo systemctl restart apache2
+#  Change hostname
+hostname="MyHostName"
+instanceHN="$hostname$instanceID"
+sudo hostnamectl set-hostname $instanceHN
+sudo sh -c " cat <<EOF >> /etc/hosts
+$instanceIP $instanceHN
+EOF"
+echo -e "\e[42m ========== your Tomcat server is available at: ==========\033[0m"
+echo -e "\e[42m ----------------- http://$instanceIP:80 ----------------\033[0m"
