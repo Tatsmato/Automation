@@ -1,12 +1,10 @@
 #!/bin/bash
 #
-#Set debug mode
 set -x
 sudo apt-get update
 # INSTALLING JAVA
 sudo apt-get install default-jdk -y
-#
-# INSTALLATION OF JENKINS
+# INSTALLAING JENKINS
 #Add the key and source list to apt for Jenkins.
 wget -q -O - https://pkg.jenkins.io/debian/jenkins-ci.org.key | sudo apt-key add -
 echo deb https://pkg.jenkins.io/debian-stable binary/ | sudo tee /etc/apt/sources.list.d/jenkins.list
