@@ -2,7 +2,7 @@
 set -x
 #change hostname
 instanceID=$(curl http://169.254.169.254/latest/meta-data/instance-id)
-hostname="Jenkins-"
+hostname="Myname"
 instanceHN="$hostname$instanceID"
 sudo hostnamectl set-hostname $instanceHN
 sudo sh -c " cat <<EOF >> /etc/hosts
