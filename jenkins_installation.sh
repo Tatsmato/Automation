@@ -1,12 +1,10 @@
 #!/bin/bash
 #
-#Set debug mode
 set -x
 sudo apt-get update
 # INSTALLING JAVA
 sudo apt-get install default-jdk -y
-#
-# INSTALLATION OF JENKINS
+# INSTALLAING JENKINS
 #Add the key and source list to apt for Jenkins.
 wget -q -O - https://pkg.jenkins.io/debian/jenkins-ci.org.key | sudo apt-key add -
 echo deb https://pkg.jenkins.io/debian-stable binary/ | sudo tee /etc/apt/sources.list.d/jenkins.list
@@ -44,7 +42,7 @@ source /etc/profile.d/apache-maven.sh
 # change hostname
 instanceIP=$(curl http://169.254.169.254/latest/meta-data/public-ipv4)
 instanceID=$(curl http://169.254.169.254/latest/meta-data/instance-id)
-hostname="NewJenkins-"
+hostname="MyHostName-"
 instanceHN="$hostname$instanceID"
 sudo hostnamectl set-hostname $instanceHN
 sudo sh -c " cat <<EOF >> /etc/hosts
