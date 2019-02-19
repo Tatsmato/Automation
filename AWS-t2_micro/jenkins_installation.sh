@@ -44,7 +44,7 @@ source /etc/profile.d/apache-maven.sh
 # change hostname
 instanceIP=$(curl http://169.254.169.254/latest/meta-data/public-ipv4)
 instanceID=$(curl http://169.254.169.254/latest/meta-data/instance-id)
-hostname="NewJenkins-"
+hostname="MyHostName-"
 instanceHN="$hostname$instanceID"
 sudo hostnamectl set-hostname $instanceHN
 sudo sh -c " cat <<EOF >> /etc/hosts
