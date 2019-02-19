@@ -1,2 +1,2 @@
 # Automation
-DevOps
+This repository contains bash scripts for automated installing servers and services.
