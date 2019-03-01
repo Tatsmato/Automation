@@ -1,0 +1,23 @@
+#!/bin/bash
+#
+# Check elasticbeanstalk cname
+set -x
+aws elasticbeanstalk check-dns-availability --cname-prefix my-cname
+# create Elastic Beanstalk bucket in Amazon S3 if you don't have
+aws s3api create-bucket --bucket my-bucket-name --acl public read--region my-choosed-aws-region
+# UPLOAD your APPlication source bundle to AmazonS3
+aws s3 cp mysource-app.zip s3://mybucket-name/my-app/mysource-app.zip
+
+# Create application
+aws elasticbeanstalk create-application --application-name my-app --description "my description"
+# Create the application verion 
+aws elasticbeanstalk create-application-version --application-name my-app --version-label v1 --description myappv1 --source-bundle S3Bucket="mybucket-name",S3Key="bucket-file-key" --auto-create-application
+# platform-versions: https://docs.aws.amazon.com/elasticbeanstalk/latest/platforms/platforms-supported.html#platforms-supported.java
+aws elasticbeanstalk create-configuration-template --application-name my-app-name --template-name v1 --solution-stack-name "platform-version"
+
+# create environment
+aws elasticbeanstalk create-environment --cname-prefix my-cname --application-name my-app --template-name v1 --version-label v1 --environment-name my-env-name
+# Determine if the new environment is Green and Ready.
+sleep 5s
+aws elasticbeanstalk describe-environments --environment-names my-env-name
+set +x

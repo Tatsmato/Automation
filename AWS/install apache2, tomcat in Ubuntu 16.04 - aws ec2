@@ -102,5 +102,8 @@ sudo hostnamectl set-hostname $instanceHN
 sudo sh -c " cat <<EOF >> /etc/hosts
 $instanceIP $instanceHN
 EOF"
+#reboot instance to make changes aply
+#sudo reboot
 echo -e "\e[42m ========== your Tomcat server is available at: ==========\033[0m"
 echo -e "\e[42m ----------------- http://$instanceIP:80 ----------------\033[0m"
+set +x
